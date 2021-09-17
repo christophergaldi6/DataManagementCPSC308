@@ -1,0 +1,88 @@
+-- 1. Show me each vendor and the average number of days to deliver products (by vendor) that is greater than the average delivery days for all vendors
+
+SELECT V.VendorID, V.VendName, PV.DaysToDeliver, AVG(PV.DaysToDeliver) AS AverageDelivery
+FROM Vendors V
+INNER JOIN Product_Vendors PV ON V.VendorID = PV.VendorID
+GROUP BY V.VendName
+HAVING AverageDelivery >
+(
+SELECT AVG(PV2.DaysToDeliver) AS TotalAverage
+FROM Product_Vendors PV2
+)
+ORDER BY AverageDelivery;
+;
+
+
+-- 2. Display for each product the product name and the total sales that is greater than the average of sales for all products in that category
+
+SELECT P.ProductNumber, P.ProductName, SUM(QuotedPrice * QuantityOrdered) AS TotalSales
+FROM Products P
+INNER JOIN Order_Details OD ON P.ProductNumber = OD.ProductNumber
+GROUP BY ProductName
+HAVING TotalSales >
+(
+SELECT AVG(TotalCategory)
+FROM
+(
+SELECT CategoryID, SUM(QuotedPrice * QuantityOrdered) AS TotalCategory
+FROM Products P2
+INNER JOIN Order_Details O ON P2.ProductNumber = O.ProductNumber
+GROUP BY CategoryID, P2.ProductNumber
+)Sum
+WHERE Sum.CategoryID = P.CategoryID
+GROUP BY CategoryID
+);
+
+-- 3. How many orders are for only one product?
+
+SELECT Count(*) AS OneProductOrders
+FROM (SELECT Count(OrderNumber)
+FROM Order_Details
+GROUP BY OrderNumber
+HAVING Count(OrderNumber)=1)
+SingleOrders;
+
+-- 4. Show customers and whether they placed an order in the first week of December 2012.
+
+SELECT C.CustomerID, C.CustFirstName, C.CustLastName, O.OrderDate,
+CASE
+WHEN O.OrderDate BETWEEN "2012-12-01" AND "2012-12-07" THEN 'YES'
+WHEN O.OrderDate NOT BETWEEN "2012-12-01" AND "2012-12-07" THEN 'NO'
+ELSE NULL
+END AS OrderedInDec
+FROM Customers C
+INNER JOIN Orders O ON C.CustomerID = O.CustomerID;
+
+-- 5. List customers and the state they live in spelled out
+
+SELECT C.CustomerID, C.CustFirstName, C.CustLastName,
+CASE C.CustState
+WHEN 'CA' THEN 'California'
+WHEN 'TX' THEN 'Texas'
+WHEN 'WA' THEN 'Washington'
+WHEN 'OR' THEN 'Oregon'
+ELSE 'Not Specified'
+END State
+FROM Customers C
+;
+
+-- 6. Display employees and their age as of February, 15 2014, and a new column for whther they are over 30 or under 30.
+
+SELECT E.EmployeeID, E.EmpFirstName, E.EmpLastName, E.EmpBirthDate,'2014-02-15' - E.EmpBirthDate AS Age,
+CASE 
+WHEN ('2014-02-15' - E.EmpBirthDate) < 30 THEN 'Under 30'
+WHEN ('2014-02-15' - E.EmpBirthDate) > 30 THEN 'Over 30'
+ELSE '30'
+END Over30
+FROM Employees E
+;
+
+
+
+
+
+
+
+
+
+

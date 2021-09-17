@@ -1,0 +1,70 @@
+-- 1. Display a combined list of customer and entertainers (think union)--
+SELECT CustFirstName || ' ' || CustLastName AS Name
+FROM Customers
+
+UNION ALL
+
+SELECT EntStageName
+FROM Entertainers ;
+-- 2. Produce a list of customer who like contemporary music together with a list of entertainers who play contemporary music --
+
+SELECT CustFirstName
+FROM Musical_Styles ms
+INNER JOIN Musical_Preferences mp
+ON ms.styleid = mp.styleid
+INNER JOIN Customers C
+ON mp.customerid = c.customerid
+WHERE ms.stylename = 'Contemporary'
+
+UNION ALL
+
+SELECT EntStageName
+FROM Musical_Styles ms
+INNER JOIN Entertainer_Styles ES
+ON ms.styleid = ES.StyleID
+INNER JOIN Entertainers E
+ON ES.EntertainerID = E.EntertainerID
+WHERE ms.stylename = 'Contemporary';
+
+-- 3. Display agents who haven’t booked an entertainer--
+
+SELECT AgtFirstName
+FROM Agents A
+WHERE A.AgentID
+    NOT IN (SELECT E.AgentID FROM Engagements E);
+    
+-- 4. Show me all entertainers and the count of each entertainer’s engagement--
+
+SELECT EntStageName, 
+(SELECT COUNT (*) FROM Engagements Eng
+WHERE Eng.EntertainerID = Ent.EntertainerID) AS count, 
+EntState
+FROM Entertainers Ent;
+
+-- 5. What is the average salary of a booking agent?--
+
+SELECT AVG(Salary)
+FROM Agents;
+
+-- 6. Shoe me the engagement numbers for all engagements that have a contract price greater than or equal to the overall average contract price--
+
+SELECT EngagementNumber, ContractPrice
+FROM Engagements
+WHERE ContractPrice >= (SELECT AVG(ContractPrice)
+                        FROM Engagements);
+                        
+-- 7. How many of our entertainers are based in Bellevue?--
+
+SELECT COUNT (*)
+FROM Entertainers
+WHERE EntCity = 'Bellevue';
+
+--8. Show each agents name, the sum of the contract price for the engagements booked, and the agent’s total commission-- 
+
+SELECT AgtFirstName, AgtLastName, 
+SUM(ContractPrice) AS Total_Price,
+SUM(ContractPrice) * CommissionRate AS Total_Commission
+FROM Agents A
+INNER JOIN Engagements E
+ON A.AgentID = E.AgentID
+GROUP BY AgtFirstName, AgtLastName;

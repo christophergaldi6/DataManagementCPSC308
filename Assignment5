@@ -1,0 +1,138 @@
+-- 1. Create the next four tables in your existing Bowling Leagues database. Make sure to have the correct data types based on the original versions of each table.
+-- a. Tournaments Archive
+-- b. Tourney_Matches_Archive 
+-- c. Match_Games_Arhcive
+-- d. Bowler_Scores_Archive
+
+CREATE TABLE Tournaments_Archive (
+    TourneyID       INT           NOT NULL,
+    TourneyDate     DATE,
+    TourneyLocation NVARCHAR (50) 
+);
+
+CREATE TABLE Tourney_Matches_Archive (
+    MatchID        INT          NOT NULL,
+    Tourney        [ID INT],
+    Lanes          NVARCHAR (5),
+    OddLaneTeamID  INT,
+    EvenLaneTeamID INT
+);
+
+CREATE TABLE Match_Games_Archive (
+    MatchID       INT      NOT NULL,
+    GameNumber    SMALLINT NOT NULL,
+    WinningTeamID INT
+);
+
+CREATE TABLE Bowler_Scores_Archive (
+    MatchID       INT      NOT NULL,
+    GameNumber    SMALLINT NOT NULL,
+    BowlerID      INT      NOT NULL,
+    RawScore      SMALLINT,
+    HandicapScore SMALLINT,
+    WonGame       BIT      NOT NULL
+);
+
+-- 2. Change the name of the “Huckleberry’s” bowling team to “Manta Rays”
+
+UPDATE Teams
+   SET TeamName = 'Manta Rays'
+ WHERE TeamName = 'Huckleberrys';
+ 
+-- 3. Archive the tournament, tourney match, match game, and bowler scores for all matches played in 2012.
+
+INSERT INTO Tournaments_Archive SELECT Tournaments.*
+                                  FROM Tournaments
+                                 WHERE strftime('%Y', TourneyDate) = '2012';
+
+INSERT INTO Tourney_Matches_Archive SELECT TM.*
+                                      FROM Tournaments T
+                                           INNER JOIN
+                                           Tourney_Matches TM ON TM.TourneyID = T.TourneyID
+                                     WHERE strftime('%Y', TourneyDate) = '2012';
+
+INSERT INTO Match_Games_Archive SELECT M.*
+                                  FROM Tournaments T
+                                       INNER JOIN
+                                       Tourney_Matches TM ON TM.TourneyID = T.TourneyID
+                                       INNER JOIN
+                                       Match_Games M ON M.MatchID = TM.MatchID
+                                 WHERE strftime('%Y', TourneyDate) = '2012';
+
+INSERT INTO Bowler_Scores_Archive SELECT B.*
+                                    FROM Tournaments T
+                                         INNER JOIN
+                                         Tourney_Matches TM ON TM.TourneyID = T.TourneyID
+                                         INNER JOIN
+                                         Match_Games M ON M.MatchID = TM.MatchID
+                                         INNER JOIN
+                                         Bowler_Scores B ON B.GameNumber = M.GameNumber AND 
+                                                            B.MatchID = M.MatchID
+                                   WHERE strftime('%Y', TourneyDate) = '2012';
+                                   
+
+-- 4. Duplicate all the tournaments and tourney matches played in 2012 for the same week in 2014.
+
+INSERT INTO Tournaments (
+                            TourneyID,
+                            TourneyDate,
+                            TourneyLocation
+                        )
+                        SELECT T.TourneyID + 25,
+                               DATE(TourneyDate, '+2 year') AS TourneyDate,
+                               TourneyLocation
+                          FROM Tournaments T
+                         WHERE strftime('%Y', TourneyDate) = '2012';
+
+INSERT INTO Tourney_Matches (
+                                MatchID,
+                                TourneyID,
+                                Lanes,
+                                OddLaneTeamID,
+                                EvenLaneTeamID
+                            )
+                            SELECT TM.MatchID + 25,
+                                   TM.TourneyID + 25,
+                                   TM.Lanes,
+                                   TM.OddLaneTeamID,
+                                   TM.EvenLaneTeamID
+                              FROM Tournaments T
+                                   INNER JOIN
+                                   Tourney_Matches TM ON TM.TourneyID = T.TourneyID
+                             WHERE strftime('%Y', TourneyDate) = '2012';
+
+-- 5. Delete all the tournament data that has been copied to the archive tables. You will need four queries
+
+DELETE FROM Tournaments
+      WHERE TourneyID IN (
+    SELECT TourneyID
+      FROM Tournaments_Archive
+);
+
+DELETE FROM Tourney_Matches
+      WHERE (TourneyID, MatchID) IN (
+    SELECT TourneyID,
+           MatchID
+      FROM Tourney_Matches_Archive
+);
+
+DELETE FROM Match_Games
+      WHERE MatchID IN (
+    SELECT MatchID
+      FROM Match_Games_Archive
+);
+
+DELETE FROM Bowler_Scores
+      WHERE (MatchID, BowlerID) IN (
+    SELECT MatchID,
+           BowlerID
+      FROM Bowler_Scores_Archive
+);
+
+-- 6. Delete all bowling matches that have not been played
+
+DELETE FROM Tourney_Matches
+      WHERE MatchID NOT IN (
+    SELECT MatchID
+      FROM Match_Games
+);
