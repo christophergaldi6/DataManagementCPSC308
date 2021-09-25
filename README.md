@@ -29,5 +29,9 @@ Exploring Tableau and the different feautures, creating a side by side bar graph
 
 ## Tableau Final Exam
 
+• Created a symbol map of the city, state, industry, and rank of the top 5000 companies in the United States
+• Designed a symbol map to demonstrate the growth of each company on the list based on location
+• Visualized the companies by ranking on the list and the location of business in relation to each other
+• Created a scatterplot to see the correlation between revenue and overall workers for each company
 
 
